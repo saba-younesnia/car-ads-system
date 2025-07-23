@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Ads System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Car Ads System</h1>
+        <nav>
+            <button id="showRegisterFormBtn">Register</button>
+            <button id="showLoginFormBtn">Login</button>
+            <span id="loggedInUser" style="display:none;">Welcome, <span id="userMobile"></span>!</span>
+            <button id="logoutBtn" style="display:none;">Logout</button>
+            <button id="showCreateAdFormBtn" style="display:none;">Create Ad</button>
+        </nav>
+    </header>
+
+    <main>
+        <div id="message" class="message"></div>
+
+        <section id="formsSection">
+            <div id="registerForm" class="form-container" style="display:none;">
+                <h2>Register</h2>
+                <form id="registrationForm">
+                    <label for="regMobile">Mobile Number:</label>
+                    <input type="text" id="regMobile" name="mobile_number" required>
+                    <label for="regPassword">Password:</label>
+                    <input type="password" id="regPassword" name="password" required>
+                    <button type="submit">Register</button>
+                </form>
+            </div>
+
+            <div id="loginForm" class="form-container" style="display:none;">
+                <h2>Login</h2>
+                <form id="loginUserForm">
+                    <label for="loginMobile">Mobile Number:</label>
+                    <input type="text" id="loginMobile" name="mobile_number" required>
+                    <label for="loginPassword">Password:</label>
+                    <input type="password" id="loginPassword" name="password" required>
+                    <button type="submit">Login</button>
+                </form>
+            </div>
+
+            <div id="createAdForm" class="form-container" style="display:none;">
+                <h2>Create New Advertisement</h2>
+                <form id="newAdvertisementForm">
+                    <h3>Car Details</h3>
+                    <label for="adMake">Make:</label>
+                    <input type="text" id="adMake" name="make" required>
+                    <label for="adModel">Model:</label>
+                    <input type="text" id="adModel" name="model" required>
+                    <label for="adYear">Year:</label>
+                    <input type="number" id="adYear" name="year" required>
+                    <label for="adColor">Color:</label>
+                    <input type="text" id="adColor" name="color" required>
+                    <label for="adStatus">Status (e.g., used, new):</label>
+                    <input type="text" id="adStatus" name="status" value="used">
+
+                    <h3>Advertisement Details</h3>
+                    <label for="adTitle">Title:</label>
+                    <input type="text" id="adTitle" name="title" required>
+                    <label for="adDescription">Description:</label>
+                    <textarea id="adDescription" name="description"></textarea>
+                    <label for="adPrice">Price:</label>
+                    <input type="number" step="0.01" id="adPrice" name="price" required>
+                    <button type="submit">Publish Advertisement</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="advertisementListing">
+            <h2>Available Advertisements</h2>
+            <div id="adsContainer">
+                Loading advertisements...
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

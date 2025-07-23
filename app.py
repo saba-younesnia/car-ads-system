@@ -1,17 +1,20 @@
 # app.py
-from flask import Flask, session, redirect, url_for, request, flash, abort
-from werkzeug.security import generate_password_hash, check_password_hash # Changed from UserManager
-from functools import wraps
+from flask import Flask, session, redirect, url_for, request, flash, abort, jsonify, render_template # Added jsonify, render_template
+from werkzeug.security import check_password_hash # Only check_password_hash is needed here for login_api
 
 # Import db and migrate from your new extensions file
 from extensions import db, migrate
 
 # Import your models *after* db is defined in extensions.py
-from models import * # Import all your models here
+from models import User # Only import User model here if needed for app.py specific routes (like login/logout)
 
-# --- ADD THIS LINE ---
-from routes import * # This imports all routes and registers them with 'app'
-# ---------------------
+# --- IMPORT YOUR BLUEPRINT HERE ---
+from routes import bp as api_bp # Import the blueprint and give it an alias
+# ----------------------------------
+
+# --- Import your decorators from utils.py ---
+from utils import login_required, roles_required # Import from the new utils file
+# --------------------------------------------
 
 app = Flask(__name__)
 
@@ -24,64 +27,19 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://user:password@localhost:54
 db.init_app(app)
 migrate.init_app(app, db)
 
+# --- Register Blueprints ---
+app.register_blueprint(api_bp) # Register the blueprint
+# ---------------------------
 
-# --- Helper functions for authentication and authorization (Keep these here for app.py specific routes) ---
-# Note: For routes.py, we will assume these are either imported or
-# that routes.py is processed in a way that 'app' is already available.
-# The previous solution for routes.py relied on request.current_user which is set by these decorators.
-# If you get NameErrors in routes.py, you might need to 'from app import login_required, roles_required' in routes.py
-# but be careful with circular imports if routes.py also imports 'app'.
-# A better long-term solution would be Flask Blueprints.
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            flash('You need to be logged in to access this page.', 'error')
-            return redirect(url_for('login_api')) # Ensure 'login_api' route exists
+# --- Flask Routes (for app.py specific routes, e.g., non-API or top-level) ---
 
-        user = User.query.get(session.get('user_id'))
-        if not user or not user.is_active:
-            session.pop('user_id', None)
-            flash('Your session has expired or account is inactive.', 'error')
-            return redirect(url_for('login_api'))
+@app.route('/')
+def home_page():
+    """
+    Renders the main HTML page for the UI.
+    """
+    return render_template('index.html')
 
-        # Attach the current user to the request object for easy access in routes
-        request.current_user = user
-        return f(*args, **kwargs)
-
-    return decorated_function
-
-
-def roles_required(*roles):
-    def wrapper(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            if 'user_id' not in session:
-                flash('You need to be logged in to access this page.', 'error')
-                return redirect(url_for('login_api'))
-
-            user = User.query.get(session.get('user_id'))
-            if not user or not user.is_active:
-                session.pop('user_id', None)
-                flash('Your session has expired or account is inactive.', 'error')
-                return redirect(url_for('login_api'))
-
-            request.current_user = user # Ensure current_user is set for role checking
-
-            # Check if current_user has any of the required roles
-            if not request.current_user.has_roles(*roles):
-                flash('You do not have the required permissions.', 'error')
-                return abort(403) # Return 403 Forbidden
-
-            return f(*args, **kwargs)
-
-        return decorated_function
-
-    return wrapper
-
-
-# --- Flask Routes (for app.py specific routes) ---
-# Example: Basic login route to set session (you'll expand this for actual login logic)
 @app.route('/login_api', methods=['POST'])
 def login_api():
     data = request.get_json()
@@ -100,11 +58,6 @@ def logout():
     session.pop('user_id', None)
     return jsonify({'message': 'Logged out successfully'}), 200
 
-@app.route('/')
-def home_page():
-    return 'Welcome to Car Ads System!'
-
-
 @app.route('/admin_dashboard')
 @login_required
 @roles_required('Admin')
@@ -112,9 +65,6 @@ def admin_dashboard():
     # Example usage of current_user and has_roles
     return f'Welcome, Admin {request.current_user.mobile_number}!'
 
-
 # --- Run the application ---
 if __name__ == '__main__':
-    # Removed db.create_all() and initial role/user creation
-    # This logic is now in seed_db.py
     app.run(debug=True)

@@ -2,7 +2,7 @@
 # This file is for seeding initial data into the database.
 # Run it using: python seed_db.py
 
-from app import app, db # Import app and db to get the Flask app context
+from app import app, db # This import should now work without circular dependencies
 from models import Role, User # Import your models
 from werkzeug.security import generate_password_hash # For hashing passwords
 
@@ -18,7 +18,6 @@ def seed_initial_data():
         print("Database tables checked/created.")
 
         # Define roles to be created
-        # IMPORTANT: Make sure these roles match what you use in routes.py (e.g., 'System', 'User', 'Admin', 'Senior', 'Seller')
         roles_to_create = ['Admin', 'User', 'Moderator', 'System', 'Senior', 'Seller']
 
         for role_name in roles_to_create:
@@ -27,7 +26,7 @@ def seed_initial_data():
                 print(f"Role '{role_name}' created.")
             else:
                 print(f"Role '{role_name}' already exists.")
-        db.session.commit() # Commit role creation
+        db.session.commit()
 
         # Create an admin user if it doesn't exist
         admin_mobile = '09123456789'
@@ -35,7 +34,7 @@ def seed_initial_data():
         if not User.query.filter_by(mobile_number=admin_mobile).first():
             user = User(mobile_number=admin_mobile, password_hash=generate_password_hash(admin_password))
             db.session.add(user)
-            db.session.commit() # Commit the user first to get an ID
+            db.session.commit()
 
             admin_role = Role.query.filter_by(name='Admin').first()
             if admin_role:

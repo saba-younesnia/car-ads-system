@@ -1,13 +1,21 @@
-from flask import jsonify, request, abort
-# IMPORT app, db, login_required, roles_required from app.py
-# This assumes app.py is imported first or app is globally available (which it is via the from routes import * in app.py)
-from app import app, db, login_required, roles_required # ADD login_required, roles_required here
-from models import User, Role, Car, Advertisement, PriceHistory, OwnershipHistory, CarImage, Transaction
-from werkzeug.security import generate_password_hash # ADD THIS IMPORT (for register_user_api)
+from flask import Blueprint, jsonify, request, abort
+from werkzeug.security import generate_password_hash
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import and_ # برای جستجوی پیشرفته
+from sqlalchemy import and_
 
-# --- توابع کمکی برای سریالایز کردن مدل‌ها به دیکشنری ---
+# Import db from extensions.py
+from extensions import db
+# Import your models
+from models import User, Role, Car, Advertisement, PriceHistory, OwnershipHistory, CarImage, Transaction
+
+# Import your decorators from utils.py
+from utils import login_required, roles_required
+
+# Define your blueprint
+# All routes defined in this file will be prefixed with '/api'
+bp = Blueprint('api', __name__, url_prefix='/api')
+
+# --- Helper functions for serializing models to dictionary ---
 def serialize_car(car):
     return {
         'id': car.id,
@@ -32,8 +40,8 @@ def serialize_advertisement(ad):
         'publisher_mobile': ad.publisher.mobile_number if ad.publisher else None
     }
 
-# --- نقاط پایانی API برای User (ثبت نام) ---
-@app.route('/api/register', methods=['POST']) # Added method
+# --- API Endpoints for User (Registration) ---
+@bp.route('/register', methods=['POST'])
 def register_user_api():
     data = request.get_json()
     if not data or 'mobile_number' not in data or 'password' not in data:
@@ -46,12 +54,11 @@ def register_user_api():
         abort(409, description="Mobile number already registered.")
 
     try:
-        new_user = User(mobile_number=mobile_number, password_hash=generate_password_hash(password)) # Fixed password_hash and used generate_password_hash
+        new_user = User(mobile_number=mobile_number, password_hash=generate_password_hash(password))
         db.session.add(new_user)
-        db.session.commit() # Commit to get user ID before assigning roles
+        db.session.commit()
 
-        # Assign 'User' role to new registrations
-        user_role = Role.query.filter_by(name='User').first() # Changed from 'System' to 'User'
+        user_role = Role.query.filter_by(name='User').first()
         if user_role:
             new_user.roles.append(user_role)
             db.session.commit()
@@ -63,20 +70,20 @@ def register_user_api():
         db.session.rollback()
         abort(500, description=f"Registration failed: {e}")
 
-# --- نقاط پایانی API برای User (مدیریت توسط ادمین/ارشد) ---
-@app.route('/api/users', methods=['GET']) # Added method
+# --- API Endpoints for User (Management by Admin/Senior) ---
+@bp.route('/users', methods=['GET'])
 @login_required
-@roles_required('Admin', 'Senior') # Specified roles
+@roles_required('Admin', 'Senior')
 def get_all_users():
     users = User.query.all()
     return jsonify([{'id': u.id, 'mobile_number': u.mobile_number, 'active': u.active, 'roles': [r.name for r in u.roles]} for u in users])
 
-@app.route('/api/users/<int:user_id>/deactivate', methods=['PUT']) # Added method
+@bp.route('/users/<int:user_id>/deactivate', methods=['PUT'])
 @login_required
-@roles_required('Admin', 'Senior') # Specified roles
+@roles_required('Admin', 'Senior')
 def deactivate_user(user_id):
     user = User.query.get_or_404(user_id)
-    if user.id == request.current_user.id: # Used request.current_user
+    if user.id == request.current_user.id:
         abort(400, description="You cannot deactivate your own account.")
     try:
         user.active = False
@@ -86,31 +93,31 @@ def deactivate_user(user_id):
         db.session.rollback()
         abort(500, description=f"An error occurred: {e}")
 
-# --- نقاط پایانی API برای Car ---
-@app.route('/api/cars', methods=['GET']) # Added method
+# --- API Endpoints for Car ---
+@bp.route('/cars', methods=['GET'])
 def get_all_cars():
     cars = Car.query.all()
     return jsonify([serialize_car(car) for car in cars])
 
-@app.route('/api/cars/<int:car_id>', methods=['GET']) # Added method
+@bp.route('/cars/<int:car_id>', methods=['GET'])
 def get_car_by_id(car_id):
     car = Car.query.get_or_404(car_id)
     return jsonify(serialize_car(car))
 
-# --- نقاط پایانی API برای Advertisement ---
-@app.route('/api/advertisements', methods=['GET']) # Added method (for fetching all ads)
+# --- API Endpoints for Advertisement ---
+@bp.route('/advertisements', methods=['GET'])
 def get_all_advertisements():
     advertisements = Advertisement.query.all()
     return jsonify([serialize_advertisement(ad) for ad in advertisements])
 
-@app.route('/api/advertisements/<int:ad_id>', methods=['GET']) # Added method (for fetching single ad)
+@bp.route('/advertisements/<int:ad_id>', methods=['GET'])
 def get_advertisement_by_id(ad_id):
     ad = Advertisement.query.get_or_404(ad_id)
     return jsonify(serialize_advertisement(ad))
 
-@app.route('/api/advertisements', methods=['POST']) # Added method (for creating ads)
+@bp.route('/advertisements', methods=['POST'])
 @login_required
-@roles_required('System', 'Admin', 'Senior') # Specified roles
+@roles_required('System', 'Admin', 'Senior', 'User') # Added 'User' as they should be able to create ads
 def create_advertisement():
     data = request.get_json()
     if not data:
@@ -125,14 +132,14 @@ def create_advertisement():
             status=data['car'].get('status', 'used')
         )
         db.session.add(new_car)
-        db.session.flush() # Use flush to get car.id before commit
+        db.session.flush()
 
         new_ad = Advertisement(
             title=data['title'],
             description=data['description'],
             price=data['price'],
             car_id=new_car.id,
-            user_id=request.current_user.id # Used request.current_user
+            user_id=request.current_user.id
         )
         db.session.add(new_ad)
         db.session.commit()
@@ -147,14 +154,13 @@ def create_advertisement():
         db.session.rollback()
         abort(500, description=f"An error occurred: {e}")
 
-@app.route('/api/advertisements/<int:ad_id>', methods=['PUT']) # Added method (for updating ads)
+@bp.route('/advertisements/<int:ad_id>', methods=['PUT'])
 @login_required
-@roles_required('System', 'Admin', 'Senior') # Specified roles
+@roles_required('System', 'Admin', 'Senior', 'User') # Added 'User' for their own ads
 def update_advertisement(ad_id):
     ad = Advertisement.query.get_or_404(ad_id)
     data = request.get_json()
 
-    # Object-level permission check: only owner or Admin/Senior user can edit
     if not (request.current_user.has_roles('Admin', 'Senior') or request.current_user.id == ad.user_id):
         abort(403, description="You do not have permission to update this advertisement.")
 
@@ -178,13 +184,12 @@ def update_advertisement(ad_id):
         db.session.rollback()
         abort(500, description=f"An error occurred: {e}")
 
-@app.route('/api/advertisements/<int:ad_id>', methods=['DELETE']) # Added method (for deleting ads)
+@bp.route('/advertisements/<int:ad_id>', methods=['DELETE'])
 @login_required
-@roles_required('System', 'Admin', 'Senior') # Specified roles
+@roles_required('System', 'Admin', 'Senior', 'User') # Added 'User' for their own ads
 def delete_advertisement(ad_id):
     ad = Advertisement.query.get_or_404(ad_id)
 
-    # Object-level permission check: only owner or Admin/Senior user can delete
     if not (request.current_user.has_roles('Admin', 'Senior') or request.current_user.id == ad.user_id):
         abort(403, description="You do not have permission to delete this advertisement.")
 
@@ -196,10 +201,10 @@ def delete_advertisement(ad_id):
         db.session.rollback()
         abort(500, description=f"An error occurred: {e}")
 
-# --- نقاط پایانی API برای Transaction (شروع معامله) ---
-@app.route('/api/transactions', methods=['POST']) # Added method
+# --- API Endpoints for Transaction (Initiate Transaction) ---
+@bp.route('/transactions', methods=['POST'])
 @login_required
-@roles_required('User') # Specify roles: User can initiate transactions
+@roles_required('User')
 def create_transaction():
     data = request.get_json()
     if not data or 'car_id' not in data or 'agreed_price' not in data:
@@ -210,17 +215,16 @@ def create_transaction():
     if not advertisement:
         abort(404, description="Advertisement for this car not found.")
 
-    if request.current_user.id == advertisement.user_id: # Used request.current_user
+    if request.current_user.id == advertisement.user_id:
         abort(400, description="You cannot buy your own advertisement.")
 
-    # بررسی اینکه آیا این خودرو قبلاً در یک معامله فعال است
     if Transaction.query.filter_by(car_id=car.id, status='pending').first():
         abort(409, description="This car is already part of a pending transaction.")
 
     try:
         new_transaction = Transaction(
             car_id=car.id,
-            buyer_id=request.current_user.id, # Used request.current_user
+            buyer_id=request.current_user.id,
             seller_id=advertisement.user_id,
             agreed_price=data['agreed_price'],
             status='pending'
@@ -232,10 +236,10 @@ def create_transaction():
         db.session.rollback()
         abort(500, description=f"Failed to initiate transaction: {e}")
 
-# --- نقاط پایانی API برای Transaction (به‌روزرسانی وضعیت معامله) ---
-@app.route('/api/transactions/<int:transaction_id>/status', methods=['PUT']) # Added method
+# --- API Endpoints for Transaction (Update Transaction Status) ---
+@bp.route('/transactions/<int:transaction_id>/status', methods=['PUT'])
 @login_required
-@roles_required('Seller', 'Admin', 'Senior') # Specify roles: Seller, Admin, Senior
+@roles_required('Seller', 'Admin', 'Senior')
 def update_transaction_status(transaction_id):
     transaction = Transaction.query.get_or_404(transaction_id)
     data = request.get_json()
@@ -244,8 +248,7 @@ def update_transaction_status(transaction_id):
     if new_status not in ['accepted', 'rejected', 'completed']:
         abort(400, description="Invalid status. Must be 'accepted', 'rejected', or 'completed'.")
 
-    # فقط فروشنده، ادمین یا کاربر ارشد می‌تواند وضعیت معامله را تغییر دهد
-    if not (request.current_user.has_roles('Admin', 'Senior') or request.current_user.id == transaction.seller_id): # Used request.current_user
+    if not (request.current_user.has_roles('Admin', 'Senior') or request.current_user.id == transaction.seller_id):
         abort(403, description="You do not have permission to update this transaction's status.")
 
     try:
@@ -256,21 +259,20 @@ def update_transaction_status(transaction_id):
         db.session.rollback()
         abort(500, description=f"Failed to update transaction status: {e}")
 
-# --- نقاط پایانی API برای Transaction (مشاهده معاملات) ---
-@app.route('/api/transactions', methods=['GET']) # Added method
+# --- API Endpoints for Transaction (View Transactions) ---
+@bp.route('/transactions', methods=['GET'])
 @login_required
-@roles_required('User', 'Admin', 'Senior') # Specified roles: All can view their own, Admin/Senior all
+@roles_required('User', 'Admin', 'Senior', 'Seller')
 def get_user_transactions():
-    # کاربران سیستم فقط معاملات خودشان را می‌بینند، ادمین/ارشد همه را
-    if request.current_user.has_roles('Admin', 'Senior'): # Used request.current_user
+    if request.current_user.has_roles('Admin', 'Senior'):
         transactions = Transaction.query.all()
-    else: # User
+    else:
         transactions = Transaction.query.filter(
-            (Transaction.buyer_id == request.current_user.id) | # Used request.current_user
-            (Transaction.seller_id == request.current_user.id) # Used request.current_user
+            (Transaction.buyer_id == request.current_user.id) |
+            (Transaction.seller_id == request.current_user.id)
         ).all()
 
-    serialized_transactions = [] # FIXED: Initialize as empty list
+    serialized_transactions = []
     for t in transactions:
         serialized_transactions.append({
             'id': t.id,
@@ -286,19 +288,19 @@ def get_user_transactions():
         })
     return jsonify(serialized_transactions)
 
-# --- نقطه پایانی API برای خودروهای مرتبط ---
-@app.route('/api/cars/<int:car_id>/related', methods=['GET']) # متد GET اضافه شد
+# --- Related Cars API Endpoint ---
+@bp.route('/cars/<int:car_id>/related', methods=['GET'])
 def get_related_cars(car_id):
     main_car = Car.query.get_or_404(car_id)
     related_cars = Car.query.filter(
         Car.make == main_car.make,
-        Car.id != main_car.id # از != استفاده کنید
+        Car.id != main_car.id
     ).limit(5).all()
 
     return jsonify([serialize_car(car) for car in related_cars])
 
-# --- نقطه پایانی API برای جستجوی پیشرفته ---
-@app.route('/api/search/cars', methods=['GET']) # متد GET اضافه شد
+# --- Advanced Car Search API Endpoint ---
+@bp.route('/search/cars', methods=['GET'])
 def advanced_car_search():
     query = Car.query.join(Advertisement)
 
@@ -308,7 +310,7 @@ def advanced_car_search():
     color = request.args.get('color')
     status = request.args.get('status')
 
-    filters = [] # FIXED: Initialize filters as an empty list
+    filters = []
 
     if min_price is not None:
         filters.append(Advertisement.price >= min_price)
