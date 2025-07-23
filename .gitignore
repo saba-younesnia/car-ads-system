@@ -1,0 +1,23 @@
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/ # Your virtual environment folder
+pip-log.txt
+pip-delete-this-file.txt
+
+# IDE specific files
+.idea/ # PyCharm project files
+.vscode/ # VS Code project files
+*.sublime-project
+*.sublime-workspace
+
+# Database files (if using SQLite for development)
+*.db
+*.sqlite3
+
+# Environment variables
+.env
