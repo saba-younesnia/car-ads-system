@@ -285,3 +285,44 @@ def get_user_transactions():
             'seller_mobile': t.seller.mobile_number if t.seller else None,
         })
     return jsonify(serialized_transactions)
+
+# --- نقطه پایانی API برای خودروهای مرتبط ---
+@app.route('/api/cars/<int:car_id>/related', methods=['GET']) # متد GET اضافه شد
+def get_related_cars(car_id):
+    main_car = Car.query.get_or_404(car_id)
+    related_cars = Car.query.filter(
+        Car.make == main_car.make,
+        Car.id != main_car.id # از != استفاده کنید
+    ).limit(5).all()
+
+    return jsonify([serialize_car(car) for car in related_cars])
+
+# --- نقطه پایانی API برای جستجوی پیشرفته ---
+@app.route('/api/search/cars', methods=['GET']) # متد GET اضافه شد
+def advanced_car_search():
+    query = Car.query.join(Advertisement)
+
+    min_price = request.args.get('min_price', type=float)
+    max_price = request.args.get('max_price', type=float)
+    brand = request.args.get('brand')
+    color = request.args.get('color')
+    status = request.args.get('status')
+
+    filters = [] # FIXED: Initialize filters as an empty list
+
+    if min_price is not None:
+        filters.append(Advertisement.price >= min_price)
+    if max_price is not None:
+        filters.append(Advertisement.price <= max_price)
+    if brand:
+        filters.append(Car.make.ilike(f'%{brand}%'))
+    if color:
+        filters.append(Car.color.ilike(f'%{color}%'))
+    if status:
+        filters.append(Car.status == status)
+
+    if filters:
+        query = query.filter(and_(*filters))
+
+    search_results = query.all()
+    return jsonify([serialize_car(car) for car in search_results])
