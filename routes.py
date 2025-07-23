@@ -3,19 +3,13 @@ from werkzeug.security import generate_password_hash
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import and_
 
-# Import db from extensions.py
 from extensions import db
-# Import your models
 from models import User, Role, Car, Advertisement, PriceHistory, OwnershipHistory, CarImage, Transaction
 
-# Import your decorators from utils.py
 from utils import login_required, roles_required
 
-# Define your blueprint
-# All routes defined in this file will be prefixed with '/api'
 bp = Blueprint('api', __name__, url_prefix='/api')
 
-# --- Helper functions for serializing models to dictionary ---
 def serialize_car(car):
     return {
         'id': car.id,
@@ -40,7 +34,6 @@ def serialize_advertisement(ad):
         'publisher_mobile': ad.publisher.mobile_number if ad.publisher else None
     }
 
-# --- API Endpoints for User (Registration) ---
 @bp.route('/register', methods=['POST'])
 def register_user_api():
     data = request.get_json()
@@ -70,7 +63,6 @@ def register_user_api():
         db.session.rollback()
         abort(500, description=f"Registration failed: {e}")
 
-# --- API Endpoints for User (Management by Admin/Senior) ---
 @bp.route('/users', methods=['GET'])
 @login_required
 @roles_required('Admin', 'Senior')
@@ -93,7 +85,6 @@ def deactivate_user(user_id):
         db.session.rollback()
         abort(500, description=f"An error occurred: {e}")
 
-# --- API Endpoints for Car ---
 @bp.route('/cars', methods=['GET'])
 def get_all_cars():
     cars = Car.query.all()
@@ -104,7 +95,6 @@ def get_car_by_id(car_id):
     car = Car.query.get_or_404(car_id)
     return jsonify(serialize_car(car))
 
-# --- API Endpoints for Advertisement ---
 @bp.route('/advertisements', methods=['GET'])
 def get_all_advertisements():
     advertisements = Advertisement.query.all()
@@ -117,7 +107,7 @@ def get_advertisement_by_id(ad_id):
 
 @bp.route('/advertisements', methods=['POST'])
 @login_required
-@roles_required('System', 'Admin', 'Senior', 'User') # Added 'User' as they should be able to create ads
+@roles_required('System', 'Admin', 'Senior', 'User')
 def create_advertisement():
     data = request.get_json()
     if not data:
@@ -156,7 +146,7 @@ def create_advertisement():
 
 @bp.route('/advertisements/<int:ad_id>', methods=['PUT'])
 @login_required
-@roles_required('System', 'Admin', 'Senior', 'User') # Added 'User' for their own ads
+@roles_required('System', 'Admin', 'Senior', 'User')
 def update_advertisement(ad_id):
     ad = Advertisement.query.get_or_404(ad_id)
     data = request.get_json()
@@ -186,7 +176,7 @@ def update_advertisement(ad_id):
 
 @bp.route('/advertisements/<int:ad_id>', methods=['DELETE'])
 @login_required
-@roles_required('System', 'Admin', 'Senior', 'User') # Added 'User' for their own ads
+@roles_required('System', 'Admin', 'Senior', 'User')
 def delete_advertisement(ad_id):
     ad = Advertisement.query.get_or_404(ad_id)
 
@@ -201,7 +191,6 @@ def delete_advertisement(ad_id):
         db.session.rollback()
         abort(500, description=f"An error occurred: {e}")
 
-# --- API Endpoints for Transaction (Initiate Transaction) ---
 @bp.route('/transactions', methods=['POST'])
 @login_required
 @roles_required('User')
@@ -236,7 +225,6 @@ def create_transaction():
         db.session.rollback()
         abort(500, description=f"Failed to initiate transaction: {e}")
 
-# --- API Endpoints for Transaction (Update Transaction Status) ---
 @bp.route('/transactions/<int:transaction_id>/status', methods=['PUT'])
 @login_required
 @roles_required('Seller', 'Admin', 'Senior')
@@ -259,7 +247,6 @@ def update_transaction_status(transaction_id):
         db.session.rollback()
         abort(500, description=f"Failed to update transaction status: {e}")
 
-# --- API Endpoints for Transaction (View Transactions) ---
 @bp.route('/transactions', methods=['GET'])
 @login_required
 @roles_required('User', 'Admin', 'Senior', 'Seller')
@@ -288,7 +275,6 @@ def get_user_transactions():
         })
     return jsonify(serialized_transactions)
 
-# --- Related Cars API Endpoint ---
 @bp.route('/cars/<int:car_id>/related', methods=['GET'])
 def get_related_cars(car_id):
     main_car = Car.query.get_or_404(car_id)
@@ -299,7 +285,6 @@ def get_related_cars(car_id):
 
     return jsonify([serialize_car(car) for car in related_cars])
 
-# --- Advanced Car Search API Endpoint ---
 @bp.route('/search/cars', methods=['GET'])
 def advanced_car_search():
     query = Car.query.join(Advertisement)

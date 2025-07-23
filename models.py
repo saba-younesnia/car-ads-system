@@ -1,10 +1,8 @@
-# models.py
-from extensions import db # Import db from extensions.py
+from extensions import db
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-# --- مدل‌های اپلیکیشن اکانتینگ ---
 class Role(db.Model):
     __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
@@ -55,7 +53,6 @@ class UserRoles(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id', ondelete='CASCADE'))
     __table_args__ = (UniqueConstraint('user_id', 'role_id', name='_user_role_uc'),)
 
-# --- مدل‌های اپلیکیشن آگهی‌ها ---
 class Car(db.Model):
     __tablename__ = 'cars'
     id = db.Column(db.Integer, primary_key=True)
@@ -105,7 +102,6 @@ class CarImage(db.Model):
     image_url = db.Column(db.String(255), nullable=False)
     description = db.Column(db.String(255))
 
-# --- مدل‌های اپلیکیشن معاملات ---
 class Transaction(db.Model):
     __tablename__ = 'transactions'
     id = db.Column(db.Integer, primary_key=True)

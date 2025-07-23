@@ -2,4 +2,10 @@ Flask
 Flask-SQLAlchemy
 psycopg2-binary
 Flask-Migrate
-Werkzeug # برای هش کردن رمز عبور
+Werkzeug
+psycopg2-binary
+python-dotenv # If you use .env files
+Flask-Bcrypt
+Flask-Login # Assuming you use this for login management
+Flask-WTF
+Flask-CORS # <-- Add this line

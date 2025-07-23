@@ -1,5 +1,4 @@
-// static/js/script.js
-const API_BASE_URL = 'http://127.0.0.1:5000'; // Your Flask app base URL
+const API_BASE_URL = 'http://127.0.0.1:5000';
 
 const messageDiv = document.getElementById('message');
 const formsSection = document.getElementById('formsSection');
@@ -19,9 +18,7 @@ const registrationForm = document.getElementById('registrationForm');
 const loginUserForm = document.getElementById('loginUserForm');
 const newAdvertisementForm = document.getElementById('newAdvertisementForm');
 
-let currentUserMobile = null; // To store the mobile number of the logged-in user
-
-// --- UI Utility Functions ---
+let currentUserMobile = null;
 
 function showMessage(msg, type = 'success') {
     messageDiv.textContent = msg;
@@ -30,7 +27,7 @@ function showMessage(msg, type = 'success') {
     setTimeout(() => {
         messageDiv.style.display = 'none';
         messageDiv.textContent = '';
-    }, 5000); // Hide after 5 seconds
+    }, 5000);
 }
 
 function hideAllForms() {
@@ -41,7 +38,7 @@ function hideAllForms() {
 
 function updateAuthUI() {
     const token = localStorage.getItem('authToken');
-    currentUserMobile = localStorage.getItem('userMobile'); // Retrieve stored mobile number
+    currentUserMobile = localStorage.getItem('userMobile');
 
     if (token && currentUserMobile) {
         showRegisterFormBtn.style.display = 'none';
@@ -50,7 +47,7 @@ function updateAuthUI() {
         userMobileSpan.textContent = currentUserMobile;
         logoutBtn.style.display = 'inline';
         showCreateAdFormBtn.style.display = 'inline';
-        hideAllForms(); // Hide forms after successful login
+        hideAllForms();
     } else {
         showRegisterFormBtn.style.display = 'inline';
         showLoginFormBtn.style.display = 'inline';
@@ -58,11 +55,8 @@ function updateAuthUI() {
         userMobileSpan.textContent = '';
         logoutBtn.style.display = 'none';
         showCreateAdFormBtn.style.display = 'none';
-        // Do not hide forms automatically to allow user to register/login
     }
 }
-
-// --- Event Listeners for UI Buttons ---
 
 showRegisterFormBtn.addEventListener('click', () => {
     hideAllForms();
@@ -90,8 +84,8 @@ logoutBtn.addEventListener('click', async () => {
         const response = await fetch(`${API_BASE_URL}/logout`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`, // Flask session-based, but good practice for API
-                'Content-Type': 'application/json' // Logout usually doesn't need body, but good to include
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
         });
 
@@ -102,7 +96,7 @@ logoutBtn.addEventListener('click', async () => {
             localStorage.removeItem('userMobile');
             showMessage(data.message, 'success');
             updateAuthUI();
-            fetchAllAdvertisements(); // Refresh ads, though logout usually doesn't affect public view
+            fetchAllAdvertisements();
         } else {
             showMessage(data.message || 'Logout failed.', 'error');
         }
@@ -111,8 +105,6 @@ logoutBtn.addEventListener('click', async () => {
         showMessage('An error occurred during logout.', 'error');
     }
 });
-
-// --- Form Submission Handlers ---
 
 registrationForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -133,7 +125,7 @@ registrationForm.addEventListener('submit', async (event) => {
             showMessage(data.message, 'success');
             registrationForm.reset();
             hideAllForms();
-            showLoginFormBtn.click(); // Redirect to login form
+            showLoginFormBtn.click();
         } else {
             showMessage(data.description || data.message || 'Registration failed.', 'error');
         }
@@ -149,7 +141,6 @@ loginUserForm.addEventListener('submit', async (event) => {
     const password = document.getElementById('loginPassword').value;
 
     try {
-        // IMPORTANT: Your login_api route is directly on the app, not under /api/
         const response = await fetch(`${API_BASE_URL}/login_api`, {
             method: 'POST',
             headers: {
@@ -160,16 +151,12 @@ loginUserForm.addEventListener('submit', async (event) => {
 
         const data = await response.json();
         if (response.ok) {
-            // In your Flask app, you're not sending a token, but setting a session.
-            // For a real SPA, you'd usually get a JWT here.
-            // For now, we'll simulate 'logged in' state using the user ID and mobile.
-            // A production app would handle session cookies automatically or use JWT.
-            localStorage.setItem('authToken', 'true'); // Simple indicator for UI state
-            localStorage.setItem('userMobile', mobile_number); // Store mobile for display
+            localStorage.setItem('authToken', 'true');
+            localStorage.setItem('userMobile', mobile_number);
             showMessage(data.message, 'success');
             loginUserForm.reset();
             updateAuthUI();
-            fetchAllAdvertisements(); // Refresh advertisements to show new options (e.g., create ad button)
+            fetchAllAdvertisements();
         } else {
             showMessage(data.message || 'Login failed.', 'error');
         }
@@ -206,8 +193,6 @@ newAdvertisementForm.addEventListener('submit', async (event) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // Flask session handles authentication, so no explicit 'Authorization' header needed for this simple setup.
-                // If using JWT, this is where you'd add: 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(adData)
         });
@@ -217,7 +202,7 @@ newAdvertisementForm.addEventListener('submit', async (event) => {
             showMessage('Advertisement created successfully!', 'success');
             newAdvertisementForm.reset();
             hideAllForms();
-            fetchAllAdvertisements(); // Refresh the list of ads
+            fetchAllAdvertisements();
         } else {
             showMessage(data.description || data.message || 'Failed to create advertisement.', 'error');
         }
@@ -227,8 +212,6 @@ newAdvertisementForm.addEventListener('submit', async (event) => {
     }
 });
 
-
-// --- Fetch Advertisements Function ---
 
 async function fetchAllAdvertisements() {
     adsContainer.innerHTML = 'Loading advertisements...';
@@ -242,7 +225,7 @@ async function fetchAllAdvertisements() {
                 return;
             }
 
-            adsContainer.innerHTML = ''; // Clear previous ads
+            adsContainer.innerHTML = '';
             ads.forEach(ad => {
                 const adCard = document.createElement('div');
                 adCard.className = 'ad-card';
@@ -268,8 +251,7 @@ async function fetchAllAdvertisements() {
     }
 }
 
-// --- Initial Load ---
 document.addEventListener('DOMContentLoaded', () => {
-    updateAuthUI(); // Check authentication status on page load
-    fetchAllAdvertisements(); // Load all ads when the page loads
+    updateAuthUI();
+    fetchAllAdvertisements();
 });
