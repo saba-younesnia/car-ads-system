@@ -40,9 +40,10 @@ def login_api():
     if user and user.is_active and check_password_hash(user.password_hash, password):
         session['user_id'] = user.id
         session['user_mobile'] = user.mobile_number
-        return jsonify({'message': 'Login successful', 'user_id': user.id, 'mobile_number': user.mobile_number}), 200
+        # --- NEW LINE HERE ---
+        user_roles = [role.name for role in user.roles] # Get roles as a list of names
+        return jsonify({'message': 'Login successful', 'user_id': user.id, 'mobile_number': user.mobile_number, 'roles': user_roles}), 200 # Include roles in response
     return jsonify({'message': 'Invalid credentials or inactive account'}), 401
-
 @app.route('/logout', methods=['POST'])
 @login_required
 def logout():

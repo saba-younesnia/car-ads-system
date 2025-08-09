@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Car Ads System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
     <header>
@@ -15,6 +16,10 @@
             <span id="loggedInUser" style="display:none;">Welcome, <span id="userMobile"></span>!</span>
             <button id="logoutBtn" style="display:none;">Logout</button>
             <button id="showCreateAdFormBtn" style="display:none;">Create Ad</button>
+            <button id="showAdvancedSearchFormBtn"><i class="fas fa-search"></i> Advanced Search</button>
+
+            <button id="showUserManagementBtn" style="display:none;"><i class="fas fa-users-cog"></i> User Management</button>
+            <button id="showAllTransactionsBtn" style="display:none;"><i class="fas fa-money-bill-transfer"></i> All Transactions</button>
         </nav>
     </header>
 
@@ -69,6 +74,51 @@
                     <button type="submit">Publish Advertisement</button>
                 </form>
             </div>
+
+            <div id="advancedSearchForm" class="form-container" style="display:none;">
+                <h2><i class="fas fa-search"></i> Advanced Car Search</h2>
+                <form id="carSearchForm">
+                    <label for="searchMinPrice">Min Price:</label>
+                    <input type="number" id="searchMinPrice" name="min_price" step="0.01">
+
+                    <label for="searchMaxPrice">Max Price:</label>
+                    <input type="number" id="searchMaxPrice" name="max_price" step="0.01">
+
+                    <label for="searchBrand">Brand (Make):</label>
+                    <input type="text" id="searchBrand" name="brand">
+
+                    <label for="searchColor">Color:</label>
+                    <input type="text" id="searchColor" name="color">
+
+                    <label for="searchStatus">Status (e.g., used, new):</label>
+                    <input type="text" id="searchStatus" name="status">
+
+                    <button type="submit">Search Cars</button>
+                </form>
+            </div>
+
+            <div id="userManagementSection" class="form-container" style="display:none;">
+                <h2><i class="fas fa-users-cog"></i> User Management</h2>
+                <div id="userListContainer">
+                    Loading users...
+                </div>
+            </div>
+
+            <div id="allTransactionsSection" class="form-container" style="display:none;">
+                <h2><i class="fas fa-money-bill-transfer"></i> Transactions</h2>
+                <div id="transactionListContainer">
+                    Loading transactions...
+                </div>
+            </div>
+
+        </section>
+
+        <section id="searchResultsSection" style="display:none;">
+            <h2>Search Results</h2>
+            <div id="searchResultsContainer">
+                No results found.
+            </div>
+            <button id="clearSearchResultsBtn" style="display:none;">Clear Search</button>
         </section>
 
         <section id="advertisementListing">
@@ -76,6 +126,13 @@
             <div id="adsContainer">
                 Loading advertisements...
             </div>
+        </section>
+
+        <section id="relatedCarsSection" style="display:none;">
+            <h2>Related Cars</h2>
+            <div id="relatedCarsContainer">
+                </div>
+            <button id="clearRelatedCarsBtn">Back to All Ads</button>
         </section>
     </main>
 

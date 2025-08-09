@@ -157,3 +157,121 @@ form button[type="submit"]:hover {
     color: #5cb85c;
     margin-top: 10px;
 }
+
+/* NEW: Styling for Search sections */
+#advancedSearchForm,
+#searchResultsSection,
+#relatedCarsSection {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+}
+
+#searchResultsSection h2,
+#relatedCarsSection h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+#searchResultsContainer,
+#relatedCarsContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Slightly smaller cards for search results */
+    gap: 15px; /* Slightly smaller gap */
+    margin-top: 15px;
+}
+
+#clearSearchResultsBtn,
+#clearRelatedCarsBtn {
+    background-color: #6c757d; /* Grey button */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    width: auto; /* Make button width dynamic */
+    display: block; /* Make it a block element */
+    margin: 20px auto 0 auto; /* Center it below results */
+}
+
+#clearSearchResultsBtn:hover,
+#clearRelatedCarsBtn:hover {
+    background-color: #5a6268;
+}
+
+/* Style for View Related Cars button in ad-card */
+.view-related-btn {
+    background-color: #17a2b8; /* Info blue */
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 0.9em;
+    display: block; /* Make it a block element */
+    width: 100%; /* Take full width of card */
+    text-align: center;
+}
+
+.view-related-btn:hover {
+    background-color: #138496;
+}
+
+/* Styling for Management Sections */
+#userManagementSection,
+#allTransactionsSection {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+}
+
+#userManagementSection h2,
+#allTransactionsSection h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+#userListContainer,
+#transactionListContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+/* Specific button styles for actions within cards */
+.ad-actions button,
+.transaction-actions button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: white;
+}
+
+.deactivate-user-btn,
+.delete-ad-btn,
+.update-transaction-status-btn[data-status="rejected"] {
+    background-color: #dc3545; /* Red */
+}
+
+.edit-ad-btn {
+    background-color: #ffc107; /* Yellow */
+}
+
+.initiate-transaction-btn,
+.update-transaction-status-btn[data-status="accepted"] {
+    background-color: #28a745; /* Green */
+}
+
+.update-transaction-status-btn[data-status="completed"] {
+    background-color: #007bff; /* Blue */
+}
